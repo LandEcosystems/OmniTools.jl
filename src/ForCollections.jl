@@ -14,21 +14,21 @@ using TypedTables: Table
 using Crayons
 
 export dictToNamedTuple
-export dropFields
-export foldlUnrolled
-export getCombinedNamedTuple
-export getNamedTupleFromTable
-export makeNamedTuple
-export nonUnique
-export removeEmptyTupleFields
-export setTupleField
-export setTupleSubfield
-export tabularizeList
+export dropNamedTupleFields
+export foldlTupleUnrolled
+export mergeNamedTuplePreferNonEmpty
+export tableToNamedTuple
+export namedTupleFromNamesValues
+export duplicates
+export dropEmptyNamedTupleFields
+export setNamedTupleField
+export setNamedTupleSubfield
+export listToTable
 export tcPrint
 
 
 """
-    collectColorForTypes(d; _color = true)
+    _collectTypeColors(d; _color = true)
 
 Collect colors for all types from nested namedtuples.
 
@@ -39,9 +39,9 @@ Collect colors for all types from nested namedtuples.
 # Returns
 - A dictionary mapping types to color codes
 """
-function collectColorForTypes(data; _color=true)
+function _collectTypeColors(data; _color=true)
     all_types = []
-    all_types = getTypes!(data, all_types)
+    all_types = _collectTypes!(data, all_types)
     c_types = Dict{DataType,Int}()
     # Julia 1.10/1.11 compatible: use simple 4-bit ANSI color codes 0–15 as defaults.
     _default_colors = collect(0:15)
@@ -91,7 +91,7 @@ end
 
 
 """
-    foldlUnrolled(f, x::Tuple{Vararg{Any, N}}; init)
+    foldlTupleUnrolled(f, x::Tuple{Vararg{Any, N}}; init)
 
 Generate an unrolled expression to run a function for each element of a tuple to avoid complexity of for loops 
 for compiler.
@@ -109,18 +109,18 @@ for compiler.
 ```jldoctest
 julia> using UtilsKit
 
-julia> foldlUnrolled(+, (1, 2, 3); init=0)
+julia> foldlTupleUnrolled(+, (1, 2, 3); init=0)
 6
 ```
 """
-@generated function foldlUnrolled(f, x::Tuple{Vararg{Any,N}}; init) where {N}
+@generated function foldlTupleUnrolled(f, x::Tuple{Vararg{Any,N}}; init) where {N}
     exes = Any[:(init = f(init, x[$i])) for i ∈ 1:N]
     return Expr(:block, exes...)
 end
 
 
 """
-    dropFields(namedtuple::NamedTuple, names::Tuple{Vararg{Symbol}})
+    dropNamedTupleFields(namedtuple::NamedTuple, names::Tuple{Vararg{Symbol}})
 
 Remove specified fields from a NamedTuple.
 
@@ -136,17 +136,17 @@ Remove specified fields from a NamedTuple.
 ```jldoctest
 julia> using UtilsKit
 
-julia> dropFields((a=1, b=2, c=3), (:b,))
+julia> dropNamedTupleFields((a=1, b=2, c=3), (:b,))
 (a = 1, c = 3)
 ```
 """
-function dropFields(nt::NamedTuple, names::Tuple{Vararg{Symbol}})
+function dropNamedTupleFields(nt::NamedTuple, names::Tuple{Vararg{Symbol}})
     keepnames = Base.diff_names(Base._nt_names(nt), names)
     return NamedTuple{keepnames}(nt)
 end
 
 """
-    getCombinedNamedTuple(base_nt::NamedTuple, priority_nt::NamedTuple)
+    mergeNamedTuplePreferNonEmpty(base_nt::NamedTuple, priority_nt::NamedTuple)
 
 Combine property values from base and priority NamedTuples.
 
@@ -162,11 +162,11 @@ Combine property values from base and priority NamedTuples.
 ```jldoctest
 julia> using UtilsKit
 
-julia> getCombinedNamedTuple((a=[1], b=[2]), (b=[99],))
+julia> mergeNamedTuplePreferNonEmpty((a=[1], b=[2]), (b=[99],))
 (a = [1], b = [99])
 ```
 """
-function getCombinedNamedTuple(base_nt::NamedTuple, priority_nt::NamedTuple)
+function mergeNamedTuplePreferNonEmpty(base_nt::NamedTuple, priority_nt::NamedTuple)
     combined_nt = (;)
     base_fields = propertynames(base_nt)
     var_fields = propertynames(priority_nt)
@@ -184,7 +184,7 @@ function getCombinedNamedTuple(base_nt::NamedTuple, priority_nt::NamedTuple)
                 field_value = getfield(priority_nt, var_field)
             end
         end
-        combined_nt = setTupleField(combined_nt,
+        combined_nt = setNamedTupleField(combined_nt,
             (var_field, field_value))
     end
     return combined_nt
@@ -192,7 +192,7 @@ end
 
 
 """
-    getNamedTupleFromTable(tbl; replace_missing_values=false)
+    tableToNamedTuple(tbl; replace_missing_values=false)
 
 Convert a table to a NamedTuple.
 
@@ -208,13 +208,13 @@ Convert a table to a NamedTuple.
 ```jldoctest
 julia> using UtilsKit
 
-julia> tbl = tabularizeList((:a, :b));
+julia> tbl = listToTable((:a, :b));
 
-julia> getNamedTupleFromTable(tbl)
+julia> tableToNamedTuple(tbl)
 (name = [:a, :b],)
 ```
 """
-function getNamedTupleFromTable(tbl; replace_missing_values=false)
+function tableToNamedTuple(tbl; replace_missing_values=false)
     a_nt = (;)
     for a_p in propertynames(tbl)
         t_p = getproperty(tbl, a_p)
@@ -223,14 +223,14 @@ function getNamedTupleFromTable(tbl; replace_missing_values=false)
             values_to_replace = [ismissing(t_p[i]) ? "" : t_p[i] for i in eachindex(t_p)]
         end
         values_to_replace = [values_to_replace...]
-        a_nt = setTupleField(a_nt, (a_p, values_to_replace))
+        a_nt = setNamedTupleField(a_nt, (a_p, values_to_replace))
     end
     return a_nt
 end
 
 
 """
-    getTypes!(d, all_types)
+    _collectTypes!(d, all_types)
 
 Collect all types from nested namedtuples.
 
@@ -241,11 +241,11 @@ Collect all types from nested namedtuples.
 # Returns
 - Array of unique types found in the data structure
 """
-function getTypes!(data, types)
+function _collectTypes!(data, types)
     for k ∈ keys(data)
         if data[k] isa NamedTuple
             push!(types, typeof(data[k]))
-            getTypes!(data[k], types)
+            _collectTypes!(data[k], types)
         else
             push!(types, typeof(data[k]))
         end
@@ -256,7 +256,7 @@ end
 
 
 """
-    makeNamedTuple(input_data, input_names)
+    namedTupleFromNamesValues(input_data, input_names)
 
 Create a NamedTuple from input data and names.
 
@@ -272,11 +272,11 @@ Create a NamedTuple from input data and names.
 ```jldoctest
 julia> using UtilsKit
 
-julia> makeNamedTuple([1, 2], [:a, :b])
+julia> namedTupleFromNamesValues([1, 2], [:a, :b])
 (a = 1, b = 2)
 ```
 """
-function makeNamedTuple(values, names)
+function namedTupleFromNamesValues(values, names)
     return (; Pair.(names, values)...)
 end
 
@@ -309,13 +309,13 @@ julia> mergeNamedTuple((a=1, b=2), (b=99,))
 function mergeNamedTuple(defaults, overrides)
     merged = deepcopy(defaults)
     for field in keys(overrides)
-        merged = mergeNamedTupleSetValue(merged, field, getproperty(overrides, field))
+        merged = _setFieldValue(merged, field, getproperty(overrides, field))
     end
     return merged
 end
 
 """
-    mergeNamedTupleSetValue(o, p, v)
+    _setFieldValue(o, p, v)
 
 Set a field in an options object.
 
@@ -343,7 +343,7 @@ Set a field in an options object.
 1. **Updating a `NamedTuple`**:
 ```julia
 options = (max_iters = 100, tol = 1e-6)
-updated_options = mergeNamedTupleSetValue(options, :tol, 1e-8)
+updated_options = _setFieldValue(options, :tol, 1e-8)
 ```
 
 2. **Updating a mutable struct**:
@@ -353,18 +353,18 @@ mutable struct BayesOptConfig
     tol::Float64
 end
 config = BayesOptConfig(100, 1e-6)
-updated_config = mergeNamedTupleSetValue(config, :tol, 1e-8)
+updated_config = _setFieldValue(config, :tol, 1e-8)
 ```
 """
-function mergeNamedTupleSetValue end
+function _setFieldValue end
 
-function mergeNamedTupleSetValue(options::NamedTuple, field, value)
+function _setFieldValue(options::NamedTuple, field, value)
     options = @set options[field] = value
     return options
 end
 
 
-function mergeNamedTupleSetValue(options, field, value)
+function _setFieldValue(options, field, value)
     Base.setproperty!(options, field, value)
     return options
 end
@@ -373,7 +373,7 @@ end
 
 
 """
-    nonUnique(x::AbstractArray{T}) where T
+    duplicates(x::AbstractArray{T}) where T
 
 Finds and returns a vector of duplicate elements in the input array.
 
@@ -388,13 +388,13 @@ A vector of duplicate elements.
 ```jldoctest
 julia> using UtilsKit
 
-julia> nonUnique([1, 2, 2, 3, 3, 3])
+julia> duplicates([1, 2, 2, 3, 3, 3])
 2-element Vector{Int64}:
  2
  3
 ```
 """
-function nonUnique(items::AbstractArray{T}) where {T}
+function duplicates(items::AbstractArray{T}) where {T}
     xs = sort(items)
     duplicatedvector = T[]
     for i ∈ eachindex(xs)[2:end]
@@ -411,7 +411,7 @@ end
 
 
 """
-    removeEmptyTupleFields(tpl::NamedTuple)
+    dropEmptyNamedTupleFields(tpl::NamedTuple)
 
 Remove all empty fields from a NamedTuple.
 
@@ -426,11 +426,11 @@ Remove all empty fields from a NamedTuple.
 ```jldoctest
 julia> using UtilsKit
 
-julia> removeEmptyTupleFields((a=(;), b=(x=1,)))
+julia> dropEmptyNamedTupleFields((a=(;), b=(x=1,)))
 (b = (x = 1,),)
 ```
 """
-function removeEmptyTupleFields(nt::NamedTuple)
+function dropEmptyNamedTupleFields(nt::NamedTuple)
     indx = findall(x -> x != NamedTuple(), values(nt))
     nkeys, nvals = tuple(collect(keys(nt))[indx]...), values(nt)[indx]
     return NamedTuple{nkeys}(nvals)
@@ -438,7 +438,7 @@ end
 
 
 """
-    setTupleSubfield(tpl, fieldname, vals)
+    setNamedTupleSubfield(tpl, fieldname, vals)
 
 Set a subfield of a NamedTuple.
 
@@ -455,20 +455,20 @@ Set a subfield of a NamedTuple.
 ```jldoctest
 julia> using UtilsKit
 
-julia> setTupleSubfield((a=(;),), :a, (:x, 1))
+julia> setNamedTupleSubfield((a=(;),), :a, (:x, 1))
 (a = (x = 1,),)
 ```
 """
-function setTupleSubfield(nt::NamedTuple, fieldname::Symbol, vals::Tuple{Symbol,Any})
+function setNamedTupleSubfield(nt::NamedTuple, fieldname::Symbol, vals::Tuple{Symbol,Any})
     if !hasproperty(nt, fieldname)
-        nt = setTupleField(nt, (fieldname, (;)))
+        nt = setNamedTupleField(nt, (fieldname, (;)))
     end
     return (; nt..., fieldname => (; getfield(nt, fieldname)..., first(vals) => last(vals)))
 end
 
 
 """
-    setTupleField(tpl, vals)
+    setNamedTupleField(tpl, vals)
 
 Set a field in a NamedTuple.
 
@@ -484,16 +484,16 @@ Set a field in a NamedTuple.
 ```jldoctest
 julia> using UtilsKit
 
-julia> setTupleField((a=1,), (:b, 2))
+julia> setNamedTupleField((a=1,), (:b, 2))
 (a = 1, b = 2)
 ```
 """
-setTupleField(nt::NamedTuple, vals::Tuple{Symbol,Any}) = (; nt..., first(vals) => last(vals))
+setNamedTupleField(nt::NamedTuple, vals::Tuple{Symbol,Any}) = (; nt..., first(vals) => last(vals))
 
 
 
 """
-    tabularizeList(_list)
+    listToTable(_list)
 
 Converts a list or tuple into a table using `TypedTables`.
 
@@ -508,13 +508,13 @@ A table representation of the input list.
 ```jldoctest
 julia> using UtilsKit
 
-julia> tbl = tabularizeList((:a, :b));
+julia> tbl = listToTable((:a, :b));
 
 julia> propertynames(tbl)
 (:name,)
 ```
 """
-function tabularizeList(list)
+function listToTable(list)
     table = Table((; name=[list...]))
     return table
 end
@@ -547,7 +547,7 @@ true
 ```
 """
 function tcPrint(data; _color=true, _type=false, _value=true, _tspace="", space_pad="")
-    colors_types = collectColorForTypes(data; _color=_color)
+    colors_types = _collectTypeColors(data; _color=_color)
     # aio = AnnotatedIOBuffer()
     lc = nothing
     ttf = _tspace * space_pad

@@ -31,13 +31,13 @@ A comprehensive utility package providing foundational functions for data manipu
 
 ## Submodules (optional)
 
-The package keeps a flat API for convenience (e.g. `booleanizeArray(...)`), but also exposes submodules:
+The package keeps a flat API for convenience (e.g. `positiveMask(...)`), but also exposes submodules:
 
 ```julia
 using UtilsKit
 
-UtilsKit.ForArray.booleanizeArray([1, 0, -1])
-UtilsKit.ForNumber.replaceInvalid(NaN, 0.0)
+UtilsKit.ForArray.positiveMask([1, 0, -1])
+UtilsKit.ForNumber.replaceInvalidNumber(NaN, 0.0)
 ```
 
 Note: long-tuple utilities live under `UtilsKit.ForLongTuples` to avoid naming conflicts with `Base` and with the exported `LongTuple` type.
@@ -59,11 +59,11 @@ dict = Dict(:a => 1, :b => 2, :c => Dict(:d => 3))
 nt = dictToNamedTuple(dict)
 
 # Display a banner (FIGlet)
-displayFIGletBanner("UtilsKit")
+printFIGletBanner("UtilsKit")
 
 # Work with arrays
 arr = [1, 2, 3, 0, -1, 5]
-bool_arr = booleanizeArray(arr)
+bool_arr = positiveMask(arr)
 
 # String utilities
 str = toUpperCaseFirst("hello_world", "Time")  # Returns :TimeHelloWorld
@@ -77,22 +77,22 @@ doc_str = getTypeDocString(SomeType)
 
 ### Array Operations
 
-- `booleanizeArray`: Convert arrays to boolean arrays
-- `flagUpper`, `flagLower`, `flagOffDiag`: Matrix flagging operations
-- `offDiag`, `offDiagUpper`, `offDiagLower`: Extract matrix diagonals
-- `stackArrays`: Stack multiple arrays
-- `getArrayView`: Create array views
+- `positiveMask`: Convert arrays to boolean masks
+- `upperTriangleMask`, `lowerTriangleMask`, `offDiagonalMask`: Matrix mask helpers
+- `offDiagonalElements`, `upperOffDiagonalElements`, `lowerOffDiagonalElements`: Extract off-diagonal elements
+- `stackAsColumns`: Stack multiple arrays as columns
+- `viewAtTrailingIndices`: Create array views using trailing indices
 
 ### Collections and Data Structures
 
 - `dictToNamedTuple`: Convert nested dictionaries to NamedTuples
-- `makeNamedTuple`: Create NamedTuples from various inputs
-- `dropFields`: Remove fields from NamedTuples
-- `getCombinedNamedTuple`: Combine multiple NamedTuples
-- `getNamedTupleFromTable`: Convert tables to NamedTuples
-- `setTupleField`, `setTupleSubfield`: Modify tuple fields
-- `tabularizeList`: Convert lists to tabular format
-- `nonUnique`: Find non-unique elements
+- `namedTupleFromNamesValues`: Create NamedTuples from names + values
+- `dropNamedTupleFields`: Remove fields from NamedTuples
+- `mergeNamedTuplePreferNonEmpty`: Combine NamedTuples (preferring non-empty fields)
+- `tableToNamedTuple`: Convert tables to NamedTuples
+- `setNamedTupleField`, `setNamedTupleSubfield`: Modify NamedTuple fields
+- `listToTable`: Convert lists to a `TypedTables.Table`
+- `duplicates`: Find duplicate elements
 
 ### String Utilities
 
@@ -101,21 +101,19 @@ doc_str = getTypeDocString(SomeType)
 ### Number Utilities
 
 - `clampZeroOne`: Clamp values between 0 and 1
-- `maxZero`, `maxOne`, `minZero`, `minOne`: Value limiting functions
-- `isInvalid`: Check for invalid numbers
-- `replaceInvalid`: Replace invalid values
+- `atLeastZero`, `atLeastOne`, `atMostZero`, `atMostOne`: Value limiting functions
+- `isInvalidNumber`: Check for invalid numbers
+- `replaceInvalidNumber`: Replace invalid values
 - `getFrac`: Get fractional part
 - `cumSum!`: In-place cumulative sum
 
 ### Display and Formatting
 
-- `displayFIGletBanner`: Display ASCII art banners (FIGlet)
-- `displayBanner`: Deprecated alias for `displayFIGletBanner`
-- `entertainMe`: Deprecated wrapper for repeated banners (use `displayFIGletBanner(...; n=...)`)
-- `showInfo`: Display formatted information
-- `showInfoSeparator`: Display separators
+- `printFIGletBanner`: Display ASCII art banners (FIGlet)
+- `printInfo`: Display formatted information
+- `printInfoSeparator`: Display separators
 - `setLogLevel`: Configure logging levels
-- `toggleStackTraceNT`: Toggle stack trace display
+- `toggleTypeAbbrevInStacktrace`: Toggle stack trace display
 
 ### Type and Documentation Utilities
 
