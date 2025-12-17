@@ -21,14 +21,14 @@ export addPackage
 export removeExtensionFromPackage
 
 """
-    ensurePackageInRegistry(pkgname::String) -> Nothing
+    assertPackageInRegistry(pkgname::String) -> Nothing
 
 Fail fast if `pkgname` cannot be found in any reachable registry.
 
 This is a preflight check to avoid creating extension files / activating environments when the package
 name is misspelled or not registered.
 """
-function ensurePackageInRegistry(pkgname::String)
+function assertPackageInRegistry(pkgname::String)
     regs = try
         StdPkg.Registry.reachable_registries()
     catch err
@@ -101,7 +101,7 @@ true
 ```
 """
 function addExtensionToFunction(target_function::Function, external_package::String; extension_location::Symbol = :Folder)
-    logAction("addExtensionToFunction", "Starting (external_package=$(external_package), extension_location=$(extension_location))")
+    _logStep("addExtensionToFunction", "Starting (external_package=$(external_package), extension_location=$(extension_location))")
 
     local_module = parentmodule(target_function)
     root_pkg = Base.moduleroot(local_module)
@@ -114,11 +114,11 @@ function addExtensionToFunction(target_function::Function, external_package::Str
 
     # First step: ensure the weak dependency is addable/added. If this fails, we stop here and do NOT
     # create any files/directories under `ext/`.
-    ensureExtensionMapping(package_root, external_package, ext_module_name)
+    _ensureProjectExtensionMapping(package_root, external_package, ext_module_name)
 
-    ext_dir = ensureExtDir(package_root)
+    ext_dir = _ensureExtDir(package_root)
     ext_path = extension_location === :File ? ext_dir :
-               extension_location === :Folder ? ensureExtensionFolder(ext_dir, ext_module_name) :
+               extension_location === :Folder ? _ensureExtensionFolder(ext_dir, ext_module_name) :
                error("Invalid `extension_location=$(extension_location)`. Expected :File or :Folder.")
 
     # Inner module inference (single level)
@@ -140,13 +140,13 @@ function addExtensionToFunction(target_function::Function, external_package::Str
     # Method signature strings (dedup default-arg expansions + repo-relative paths)
     template_methods = getMethodSignatures(target_function; path=:relative_root)
     # Arg name + last-arg type inference (best-effort)
-    template_arg_names, template_last_arg_type = _inferCommonArgs(target_function)
+    template_arg_names, template_last_arg_type = _inferCommonArgNames(target_function)
 
     if entry_exists && code_exists
         error("Both extension entry and include exist.\nEntry: $(entry_file)\nInclude: $(code_path)\nDelete the include file to regenerate it.")
     elseif entry_exists && !code_exists
-        warnAction("addExtensionToFunction", "Entry exists but include is missing. Creating include only (no overwrite of entry).")
-        createExtensionCode(ext_path, codefile; template=(;
+        _warnStep("addExtensionToFunction", "Entry exists but include is missing. Creating include only (no overwrite of entry).")
+        _writeExtensionInclude(ext_path, codefile; template=(;
             root_package_name=root_pkg_name,
             inner_module=inner,
             external_package_name=external_package,
@@ -156,11 +156,11 @@ function addExtensionToFunction(target_function::Function, external_package::Str
             last_arg_type=template_last_arg_type,
         ))
     elseif !entry_exists && code_exists
-        warnAction("addExtensionToFunction", "Include exists but entry is missing. Creating entry that includes existing include (no changes to include).")
-        createExtensionEntry(root_pkg_name, inner, external_package, ext_path, ext_module_name, codefile)
+        _warnStep("addExtensionToFunction", "Include exists but entry is missing. Creating entry that includes existing include (no changes to include).")
+        _writeExtensionEntry(root_pkg_name, inner, external_package, ext_path, ext_module_name, codefile)
     else
-        createExtensionEntry(root_pkg_name, inner, external_package, ext_path, ext_module_name, codefile)
-        createExtensionCode(ext_path, codefile; template=(;
+        _writeExtensionEntry(root_pkg_name, inner, external_package, ext_path, ext_module_name, codefile)
+        _writeExtensionInclude(ext_path, codefile; template=(;
             root_package_name=root_pkg_name,
             inner_module=inner,
             external_package_name=external_package,
@@ -171,7 +171,7 @@ function addExtensionToFunction(target_function::Function, external_package::Str
         ))
     end
 
-    logAction("addExtensionToFunction", "Done. Extension module name: $(ext_module_name)")
+    _logStep("addExtensionToFunction", "Done. Extension module name: $(ext_module_name)")
     return ext_module_name
 end
 
@@ -198,7 +198,7 @@ true
 ```
 """
 function addExtensionToPackage(local_module::Module, external_package::String; extension_location::Symbol = :File)
-    logAction("addExtensionToPackage", "Starting (external_package=$(external_package), extension_location=$(extension_location))")
+    _logStep("addExtensionToPackage", "Starting (external_package=$(external_package), extension_location=$(extension_location))")
 
     root_pkg = Base.moduleroot(local_module)
     root_pkg_name = String(nameof(root_pkg))
@@ -210,11 +210,11 @@ function addExtensionToPackage(local_module::Module, external_package::String; e
 
     # First step: ensure the weak dependency is addable/added. If this fails, we stop here and do NOT
     # create any files/directories under `ext/`.
-    ensureExtensionMapping(package_root, external_package, ext_module_name)
+    _ensureProjectExtensionMapping(package_root, external_package, ext_module_name)
 
-    ext_dir = ensureExtDir(package_root)
+    ext_dir = _ensureExtDir(package_root)
     ext_path = extension_location === :File ? ext_dir :
-               extension_location === :Folder ? ensureExtensionFolder(ext_dir, ext_module_name) :
+               extension_location === :Folder ? _ensureExtensionFolder(ext_dir, ext_module_name) :
                error("Invalid `extension_location=$(extension_location)`. Expected :File or :Folder.")
 
     # Optional single inner module name for import statement
@@ -223,8 +223,8 @@ function addExtensionToPackage(local_module::Module, external_package::String; e
     rel = (length(local_full) > length(root_full) && local_full[1:length(root_full)] == root_full) ? local_full[length(root_full)+1:end] : ()
     inner = length(rel) == 1 ? String(rel[1]) : nothing
 
-    createExtensionEntry(root_pkg_name, inner, external_package, ext_path, ext_module_name, nothing)
-    logAction("addExtensionToPackage", "Done. Extension module name: $(ext_module_name)")
+    _writeExtensionEntry(root_pkg_name, inner, external_package, ext_path, ext_module_name, nothing)
+    _logStep("addExtensionToPackage", "Done. Extension module name: $(ext_module_name)")
     return ext_module_name
 end
 
@@ -290,20 +290,20 @@ end
 
 
 # ---------------------------------------------------------------------------
-# createExtensionCode
+# _writeExtensionInclude
 # ---------------------------------------------------------------------------
 
 """
-    createExtensionCode(ext_path::String, codefile::Union{Nothing,String}; template=nothing) -> Union{Nothing,String}
+    _writeExtensionInclude(ext_path::String, codefile::Union{Nothing,String}; template=nothing) -> Union{Nothing,String}
 
 Create the include file if missing; errors if it already exists (no overwrite).
 """
-function createExtensionCode(ext_path::String, codefile::Union{Nothing,String}; template::Union{Nothing,NamedTuple}=nothing)
+function _writeExtensionInclude(ext_path::String, codefile::Union{Nothing,String}; template::Union{Nothing,NamedTuple}=nothing)
     isnothing(codefile) && return nothing
     codepath = joinpath(ext_path, codefile)
     isfile(codepath) && error("Extension include file already exists: $(codepath)\nDelete it to regenerate.")
 
-    logAction("createExtensionCode", "Creating include file: $(codepath)")
+    _logStep("_writeExtensionInclude", "Creating include file: $(codepath)")
     open(codepath, "w") do io
         if isnothing(template)
             println(io, "# Extension code for $(codefile)")
@@ -362,20 +362,20 @@ function createExtensionCode(ext_path::String, codefile::Union{Nothing,String}; 
         println(io, "#     # TODO: implement")
         println(io, "# end")
     end
-    logAction("createExtensionCode", "Wrote: $(codepath)")
+    _logStep("_writeExtensionInclude", "Wrote: $(codepath)")
     return codepath
 end
 
 # ---------------------------------------------------------------------------
-# createExtensionEntry
+# _writeExtensionEntry
 # ---------------------------------------------------------------------------
 
 """
-    createExtensionEntry(main_package_name::String, inner_module::Union{Nothing,String}, extension_package_name::String, ext_path::String, ext_module_name::String, codefile::Union{Nothing,String}) -> String
+    _writeExtensionEntry(main_package_name::String, inner_module::Union{Nothing,String}, extension_package_name::String, ext_path::String, ext_module_name::String, codefile::Union{Nothing,String}) -> String
 
 Create the extension entry file (`<ExtModuleName>.jl`). Errors if it already exists (no overwrite).
 """
-function createExtensionEntry(
+function _writeExtensionEntry(
     main_package_name::String,
     inner_module::Union{Nothing,String},
     extension_package_name::String,
@@ -386,7 +386,7 @@ function createExtensionEntry(
     ext_file = joinpath(ext_path, "$(ext_module_name).jl")
     isfile(ext_file) && error("Extension entry file already exists: $(ext_file)\nDelete it to regenerate.")
 
-    logAction("createExtensionEntry", "Creating extension entry file: $(ext_file)")
+    _logStep("_writeExtensionEntry", "Creating extension entry file: $(ext_file)")
 
     extended_target = isnothing(inner_module) ? main_package_name : "$main_package_name.$inner_module"
     # Only emit the `import` in the entry file when we are NOT generating/including an extension code file.
@@ -424,53 +424,53 @@ end
 """)
     end
 
-    logAction("createExtensionEntry", "Wrote: $(ext_file)")
+    _logStep("_writeExtensionEntry", "Wrote: $(ext_file)")
     return ext_file
 end
 
 # ---------------------------------------------------------------------------
-# ensureExtDir / ensureExtensionFolder
+# _ensureExtDir / _ensureExtensionFolder
 # ---------------------------------------------------------------------------
 
 """
-    ensureExtDir(package_root::String) -> String
+    _ensureExtDir(package_root::String) -> String
 
 Ensure `<package_root>/ext` exists.
 """
-function ensureExtDir(package_root::String)
+function _ensureExtDir(package_root::String)
     ext_dir = joinpath(package_root, "ext")
     if !isdir(ext_dir)
         mkpath(ext_dir)
-        logAction("ensureExtDir", "Created directory: $(ext_dir)")
+        _logStep("_ensureExtDir", "Created directory: $(ext_dir)")
     end
     return ext_dir
 end
 
 """
-    ensureExtensionFolder(ext_dir::String, ext_module_name::String) -> String
+    _ensureExtensionFolder(ext_dir::String, ext_module_name::String) -> String
 
 Ensure `ext/<ExtModuleName>/` exists.
 """
-function ensureExtensionFolder(ext_dir::String, ext_module_name::String)
+function _ensureExtensionFolder(ext_dir::String, ext_module_name::String)
     ext_path = joinpath(ext_dir, ext_module_name)
     if !isdir(ext_path)
         mkpath(ext_path)
-        logAction("ensureExtensionFolder", "Created directory: $(ext_path)")
+        _logStep("_ensureExtensionFolder", "Created directory: $(ext_path)")
     end
     return ext_path
 end
 
 # ---------------------------------------------------------------------------
-# ensureExtensionMapping
+# _ensureProjectExtensionMapping
 # ---------------------------------------------------------------------------
 
 """
-    ensureExtensionMapping(package_root::String, external_package::String, ext_module_name::String) -> Nothing
+    _ensureProjectExtensionMapping(package_root::String, external_package::String, ext_module_name::String) -> Nothing
 
 Ensure `Project.toml` includes `external_package` in `[weakdeps]` and maps
 `ext_module_name = "external_package"` in `[extensions]`. May call `Pkg.add(...; target=:weakdeps)`.
 """
-function ensureExtensionMapping(package_root::String, external_package::String, ext_module_name::String)
+function _ensureProjectExtensionMapping(package_root::String, external_package::String, ext_module_name::String)
     package_root = normpath(abspath(package_root))
     project_file = joinpath(package_root, "Project.toml")
     project = TOML.parsefile(project_file)
@@ -545,34 +545,34 @@ function ensureExtensionMapping(package_root::String, external_package::String, 
     open(project_file, "w") do io
         TOML.print(io, project)
     end
-    logAction("ensureExtensionMapping", "Updated $(project_file)")
+    _logStep("_ensureProjectExtensionMapping", "Updated $(project_file)")
     for a in actions
-        logAction("ensureExtensionMapping", "- $(a)")
+        _logStep("_ensureProjectExtensionMapping", "- $(a)")
     end
     return nothing
 end
 
 # ---------------------------------------------------------------------------
-# extensionCodeFilename
+# _extensionIncludeFilename
 # ---------------------------------------------------------------------------
 
 """
-    extensionCodeFilename(inner_module::Union{Nothing,String}, function_name::String) -> String
+    _extensionIncludeFilename(inner_module::Union{Nothing,String}, function_name::String) -> String
 
 Return `<InnerModule><Cap(function_name)>.jl` or `<Cap(function_name)>.jl`.
 """
-function extensionCodeFilename(inner_module::Union{Nothing,String}, function_name::String)
+function _extensionIncludeFilename(inner_module::Union{Nothing,String}, function_name::String)
     cap = uppercasefirst(function_name)
     prefix = isnothing(inner_module) ? "" : inner_module
     return "$(prefix)$(cap).jl"
 end
 
 """
-    logAction(caller::AbstractString, message::AbstractString) -> Nothing
+    _logStep(caller::AbstractString, message::AbstractString) -> Nothing
 
 Print a standardized progress message.
 """
-function logAction(caller::AbstractString, message::AbstractString)
+function _logStep(caller::AbstractString, message::AbstractString)
     println("[$(caller)] $(message)")
     return nothing
 end
@@ -598,7 +598,7 @@ true
 ```
 """
 function removeExtensionFromPackage(local_module::Module, external_package::String)
-    logAction("removeExtensionFromPackage", "Starting (external_package=$(external_package))")
+    _logStep("removeExtensionFromPackage", "Starting (external_package=$(external_package))")
 
     root_pkg = Base.moduleroot(local_module)
     root_pkg_name = String(nameof(root_pkg))
@@ -620,56 +620,56 @@ function removeExtensionFromPackage(local_module::Module, external_package::Stri
 
     if haskey(project, "extensions") && haskey(project["extensions"], ext_module_name)
         delete!(project["extensions"], ext_module_name)
-        logAction("removeExtensionFromPackage", "Removed [extensions] mapping: $(ext_module_name) = \"$(external_package)\"")
+        _logStep("removeExtensionFromPackage", "Removed [extensions] mapping: $(ext_module_name) = \"$(external_package)\"")
     else
-        warnAction("removeExtensionFromPackage", "No [extensions] mapping found for $(ext_module_name).")
+        _warnStep("removeExtensionFromPackage", "No [extensions] mapping found for $(ext_module_name).")
     end
     if haskey(project, "extensions") && haskey(project["extensions"], external_package) && project["extensions"][external_package] == ext_module_name
         delete!(project["extensions"], external_package)
-        logAction("removeExtensionFromPackage", "Removed reversed mapping: $(external_package) = \"$(ext_module_name)\"")
+        _logStep("removeExtensionFromPackage", "Removed reversed mapping: $(external_package) = \"$(ext_module_name)\"")
     end
     if haskey(project, "weakdeps") && haskey(project["weakdeps"], external_package)
         delete!(project["weakdeps"], external_package)
-        logAction("removeExtensionFromPackage", "Removed [weakdeps] entry for $(external_package).")
+        _logStep("removeExtensionFromPackage", "Removed [weakdeps] entry for $(external_package).")
     end
     if haskey(project, "deps") && haskey(project["deps"], external_package)
         delete!(project["deps"], external_package)
-        warnAction("removeExtensionFromPackage", "Removed [deps] entry for $(external_package).")
+        _warnStep("removeExtensionFromPackage", "Removed [deps] entry for $(external_package).")
     end
 
     open(project_file, "w") do io
         TOML.print(io, project)
     end
-    logAction("removeExtensionFromPackage", "Wrote: $(project_file)")
+    _logStep("removeExtensionFromPackage", "Wrote: $(project_file)")
 
     try
         StdPkg.activate(package_root)
         try
             StdPkg.rm(external_package)
-            logAction("removeExtensionFromPackage", "Ran Pkg.rm(\"$(external_package)\") (Manifest updated).")
+            _logStep("removeExtensionFromPackage", "Ran Pkg.rm(\"$(external_package)\") (Manifest updated).")
         catch
-            warnAction("removeExtensionFromPackage", "Pkg.rm(\"$(external_package)\") failed (maybe not installed).")
+            _warnStep("removeExtensionFromPackage", "Pkg.rm(\"$(external_package)\") failed (maybe not installed).")
         end
         try StdPkg.resolve() catch end
     catch
-        warnAction("removeExtensionFromPackage", "Pkg environment update failed; Manifest may be unchanged.")
+        _warnStep("removeExtensionFromPackage", "Pkg environment update failed; Manifest may be unchanged.")
     end
 
     if file_exists && folder_exists
-        warnAction("removeExtensionFromPackage", "Both file- and folder-style entries exist. Remove one (or both):")
-        warnAction("removeExtensionFromPackage", "  ; rm -f \"$(file_entry)\"")
-        warnAction("removeExtensionFromPackage", "  ; rm -rf \"$(ext_folder)\"")
+        _warnStep("removeExtensionFromPackage", "Both file- and folder-style entries exist. Remove one (or both):")
+        _warnStep("removeExtensionFromPackage", "  ; rm -f \"$(file_entry)\"")
+        _warnStep("removeExtensionFromPackage", "  ; rm -rf \"$(ext_folder)\"")
     elseif folder_exists
-        warnAction("removeExtensionFromPackage", "Detected folder-style extension. Remove with:\n  ; rm -rf \"$(ext_folder)\"")
+        _warnStep("removeExtensionFromPackage", "Detected folder-style extension. Remove with:\n  ; rm -rf \"$(ext_folder)\"")
     elseif file_exists
-        warnAction("removeExtensionFromPackage", "Detected file-style extension. Remove with:\n  ; rm -f \"$(file_entry)\"")
+        _warnStep("removeExtensionFromPackage", "Detected file-style extension. Remove with:\n  ; rm -f \"$(file_entry)\"")
     else
-        warnAction("removeExtensionFromPackage", "No extension entry found under ext/. Potential commands:")
-        warnAction("removeExtensionFromPackage", "  ; rm -f \"$(file_entry)\"")
-        warnAction("removeExtensionFromPackage", "  ; rm -rf \"$(ext_folder)\"")
+        _warnStep("removeExtensionFromPackage", "No extension entry found under ext/. Potential commands:")
+        _warnStep("removeExtensionFromPackage", "  ; rm -f \"$(file_entry)\"")
+        _warnStep("removeExtensionFromPackage", "  ; rm -rf \"$(ext_folder)\"")
     end
 
-    logAction("removeExtensionFromPackage", "Done. Extension module name: $(ext_module_name)")
+    _logStep("removeExtensionFromPackage", "Done. Extension module name: $(ext_module_name)")
     return ext_module_name
 end
 
@@ -677,7 +677,7 @@ end
 # Internal helpers (not exported)
 # ---------------------------------------------------------------------------
 
-function _inferCommonArgs(f::Function)
+function _inferCommonArgNames(f::Function)
     arg_name_counts = Dict{Int,Dict{String,Int}}()
     last_type_counts = Dict{String,Int}()
     for m in methods(f)
@@ -717,11 +717,11 @@ function _inferCommonArgs(f::Function)
 end
 
 """
-    warnAction(caller::AbstractString, message::AbstractString) -> Nothing
+    _warnStep(caller::AbstractString, message::AbstractString) -> Nothing
 
 Emit a real Julia warning (via `Logging.@warn`) with a standardized message prefix.
 """
-function warnAction(caller::AbstractString, message::AbstractString)
+function _warnStep(caller::AbstractString, message::AbstractString)
     @warn "[$(caller)] $(message)"
     return nothing
 end

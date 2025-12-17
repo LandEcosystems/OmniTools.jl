@@ -11,9 +11,9 @@ module ForNumber
 export clampZeroOne
 export cumSum!
 export getFrac
-export isInvalid
-export maxZero, maxOne, minZero, minOne
-export replaceInvalid
+export isInvalidNumber
+export atLeastZero, atLeastOne, atMostZero, atMostOne
+export replaceInvalidNumber
 
 """
     clampZeroOne(num)
@@ -92,7 +92,7 @@ end
 
 
 """
-    isInvalid(_data::Number)
+    isInvalidNumber(_data::Number)
 
 Checks if a number is invalid (e.g., `nothing`, `missing`, `NaN`, or `Inf`).
 
@@ -107,21 +107,21 @@ Checks if a number is invalid (e.g., `nothing`, `missing`, `NaN`, or `Inf`).
 ```jldoctest
 julia> using UtilsKit
 
-julia> isInvalid(NaN)
+julia> isInvalidNumber(NaN)
 true
 
-julia> isInvalid(1.0)
+julia> isInvalidNumber(1.0)
 false
 ```
 """
-function isInvalid(x)
+function isInvalidNumber(x)
     return isnothing(x) || ismissing(x) || isnan(x) || isinf(x)
 end
 
 
 
 """
-    maxZero(num)
+    atLeastZero(num)
 
 returns max(num, 0)
 
@@ -130,17 +130,17 @@ returns max(num, 0)
 ```jldoctest
 julia> using UtilsKit
 
-julia> maxZero(-1.0)
+julia> atLeastZero(-1.0)
 0.0
 ```
 """
-function maxZero(num)
+function atLeastZero(num)
     return max(num, zero(num))
 end
 
 
 """
-    maxOne(num)
+    atLeastOne(num)
 
 returns max(num, 1)
 
@@ -149,17 +149,17 @@ returns max(num, 1)
 ```jldoctest
 julia> using UtilsKit
 
-julia> maxOne(0.5)
+julia> atLeastOne(0.5)
 1.0
 ```
 """
-function maxOne(num)
+function atLeastOne(num)
     return max(num, one(num))
 end
 
 
 """
-    minZero(num)
+    atMostZero(num)
 
 returns min(num, 0)
 
@@ -168,17 +168,17 @@ returns min(num, 0)
 ```jldoctest
 julia> using UtilsKit
 
-julia> minZero(1.0)
+julia> atMostZero(1.0)
 0.0
 ```
 """
-function minZero(num)
+function atMostZero(num)
     return min(num, zero(num))
 end
 
 
 """
-    minOne(num)
+    atMostOne(num)
 
 returns min(num, 1)
 
@@ -187,17 +187,17 @@ returns min(num, 1)
 ```jldoctest
 julia> using UtilsKit
 
-julia> minOne(2.0)
+julia> atMostOne(2.0)
 1.0
 ```
 """
-function minOne(num)
+function atMostOne(num)
     return min(num, one(num))
 end
 
 
 """
-    replaceInvalid(_data, _data_fill)
+    replaceInvalidNumber(_data, _data_fill)
 
 Replaces invalid numbers in the input with a specified fill value.
 
@@ -213,15 +213,15 @@ The input number if valid, otherwise the fill value.
 ```jldoctest
 julia> using UtilsKit
 
-julia> replaceInvalid(NaN, 0.0)
+julia> replaceInvalidNumber(NaN, 0.0)
 0.0
 
-julia> replaceInvalid(2.0, 0.0)
+julia> replaceInvalidNumber(2.0, 0.0)
 2.0
 ```
 """
-function replaceInvalid(x, fill_value)
-    x = isInvalid(x) ? fill_value : x
+function replaceInvalidNumber(x, fill_value)
+    x = isInvalidNumber(x) ? fill_value : x
     return x
 end
 
