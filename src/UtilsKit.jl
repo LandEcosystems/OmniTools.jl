@@ -69,11 +69,11 @@ dict = Dict(:a => 1, :b => 2)
 nt = dictToNamedTuple(dict)
 
 # Display a banner (FIGlet)
-displayFIGletBanner("UtilsKit")
+printFIGletBanner("UtilsKit")
 
 # Work with arrays
 arr = [1, 2, 3, 0, -1, 5]
-bool_arr = booleanizeArray(arr)
+bool_arr = positiveMask(arr)
 
 # String utilities
 str = toUpperCaseFirst("hello_world", "Time")  # Returns :TimeHelloWorld
@@ -89,8 +89,8 @@ str = toUpperCaseFirst("hello_world", "Time")  # Returns :TimeHelloWorld
 # See Also
 
 - [`dictToNamedTuple`](@ref) for dictionary conversion
-- [`displayFIGletBanner`](@ref) for ASCII art display
-- [`booleanizeArray`](@ref) for array booleanization
+- [`printFIGletBanner`](@ref) for ASCII art display
+- [`positiveMask`](@ref) for array masking
 - [`getTypeDocString`](@ref) for type documentation generation
 """
 module UtilsKit
@@ -111,8 +111,8 @@ module UtilsKit
    # -----------------------------------------------------------------------
 
    # Number
-   using .ForNumber: clampZeroOne, cumSum!, getFrac, isInvalid, maxZero, maxOne, minZero, minOne, replaceInvalid
-   export clampZeroOne, cumSum!, getFrac, isInvalid, maxZero, maxOne, minZero, minOne, replaceInvalid
+   using .ForNumber: clampZeroOne, cumSum!, getFrac, isInvalidNumber, replaceInvalidNumber, atLeastZero, atLeastOne, atMostZero, atMostOne
+   export clampZeroOne, cumSum!, getFrac, isInvalidNumber, replaceInvalidNumber, atLeastZero, atLeastOne, atMostZero, atMostOne
 
    # String
    using .ForString: toUpperCaseFirst
@@ -127,22 +127,30 @@ module UtilsKit
    export loopWriteTypeDocString, writeTypeDocString, getTypeDocString
 
    # Collections / NamedTuple utils
-   using .ForCollections: dictToNamedTuple, dropFields, foldlUnrolled, getCombinedNamedTuple, getNamedTupleFromTable, makeNamedTuple,
-                       mergeNamedTuple, nonUnique, removeEmptyTupleFields, setTupleField, setTupleSubfield, tabularizeList, tcPrint
-   export dictToNamedTuple, dropFields, foldlUnrolled, getCombinedNamedTuple, getNamedTupleFromTable, makeNamedTuple,
-          mergeNamedTuple, nonUnique, removeEmptyTupleFields, setTupleField, setTupleSubfield, tabularizeList, tcPrint
+   using .ForCollections: dictToNamedTuple, mergeNamedTuple, tcPrint,
+                          dropNamedTupleFields, foldlTupleUnrolled, mergeNamedTuplePreferNonEmpty, tableToNamedTuple,
+                          namedTupleFromNamesValues, duplicates, dropEmptyNamedTupleFields,
+                          setNamedTupleField, setNamedTupleSubfield, listToTable
+   export dictToNamedTuple, mergeNamedTuple, tcPrint,
+          dropNamedTupleFields, foldlTupleUnrolled, mergeNamedTuplePreferNonEmpty, tableToNamedTuple,
+          namedTupleFromNamesValues, duplicates, dropEmptyNamedTupleFields,
+          setNamedTupleField, setNamedTupleSubfield, listToTable
 
    # Long tuple utilities
-   using .ForLongTuples: LongTuple, foldlLongTuple, getTupleFromLongTuple, makeLongTuple
-   export LongTuple, foldlLongTuple, getTupleFromLongTuple, makeLongTuple
+   using .ForLongTuples: LongTuple, foldlLongTuple, toTuple, toLongTuple
+   export LongTuple, foldlLongTuple, toTuple, toLongTuple
 
    # Arrays
-   using .ForArray: booleanizeArray, flagLower, flagOffDiag, flagUpper, getArrayView, offDiag, offDiagUpper, offDiagLower, stackArrays
-   export booleanizeArray, flagLower, flagOffDiag, flagUpper, getArrayView, offDiag, offDiagUpper, offDiagLower, stackArrays
+   using .ForArray: positiveMask, lowerTriangleMask, offDiagonalMask, upperTriangleMask,
+                    viewAtTrailingIndices, offDiagonalElements, upperOffDiagonalElements, lowerOffDiagonalElements,
+                    stackAsColumns
+   export positiveMask, lowerTriangleMask, offDiagonalMask, upperTriangleMask,
+          viewAtTrailingIndices, offDiagonalElements, upperOffDiagonalElements, lowerOffDiagonalElements,
+          stackAsColumns
 
    # Display helpers
-   using .ForDisplay: entertainMe, setLogLevel, displayFIGletBanner, displayBanner, showInfo, showInfoSeparator, toggleStackTraceNT
-   export entertainMe, setLogLevel, displayFIGletBanner, displayBanner, showInfo, showInfoSeparator, toggleStackTraceNT
+   using .ForDisplay: setLogLevel, printFIGletBanner, printInfo, printInfoSeparator, toggleTypeAbbrevInStacktrace
+   export setLogLevel, printFIGletBanner, printInfo, printInfoSeparator, toggleTypeAbbrevInStacktrace
 
    # Pkg / extensions helpers
    using .ForPkg: addExtensionToFunction, addExtensionToPackage, addPackage, removeExtensionFromPackage

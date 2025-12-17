@@ -8,8 +8,8 @@ module ForLongTuples
 
 export LongTuple
 export foldlLongTuple
-export getTupleFromLongTuple
-export makeLongTuple
+export toTuple
+export toLongTuple
 
 """
     LongTuple{NSPLIT,T}
@@ -105,16 +105,16 @@ function Base.show(io::IO, lt::LongTuple{N}) where N
     for (i, tup) in enumerate(lt.data)
         for (j, elem) in enumerate(tup)
             if k_tuple<10
-                show_element(io, elem, "  $(k_tuple)  ↓ ")
+                _showLongTupleElement(io, elem, "  $(k_tuple)  ↓ ")
             else
-                show_element(io, elem, "  $(k_tuple) ↓ ")
+                _showLongTupleElement(io, elem, "  $(k_tuple) ↓ ")
             end
             k_tuple +=1
         end
     end
 end
 
-function show_element(io::IO, elem, indent)
+function _showLongTupleElement(io::IO, elem, indent)
     struct_name = nameof(typeof(elem))
     printstyled(io, indent; color=:light_black)
     printstyled(io, struct_name)
@@ -140,7 +140,7 @@ Fold over the elements of a `LongTuple` in a compiler-friendly (unrolled) way.
 ```jldoctest
 julia> using UtilsKit
 
-julia> lt = makeLongTuple((1, 2, 3), 2);
+julia> lt = toLongTuple((1, 2, 3), 2);
 
 julia> foldlLongTuple((x, acc) -> acc + x, lt; init=0)
 6
@@ -161,7 +161,7 @@ end
 
 
 """
-    getTupleFromLongTuple(long_tuple)
+    toTuple(long_tuple)
 
 Convert a LongTuple to a regular tuple.
 
@@ -176,13 +176,13 @@ Convert a LongTuple to a regular tuple.
 ```jldoctest
 julia> using UtilsKit
 
-julia> lt = makeLongTuple((1, 2, 3), 2);
+julia> lt = toLongTuple((1, 2, 3), 2);
 
-julia> getTupleFromLongTuple(lt)
+julia> toTuple(lt)
 (1, 2, 3)
 ```
 """
-function getTupleFromLongTuple(lt::LongTuple)
+function toTuple(lt::LongTuple)
     emp_vec = []
     foreach(lt) do x
         push!(emp_vec, x)
@@ -191,7 +191,7 @@ function getTupleFromLongTuple(lt::LongTuple)
 end
 
 """
-    makeLongTuple(normal_tuple; longtuple_size=5)
+    toLongTuple(normal_tuple; longtuple_size=5)
 
 Create a LongTuple from a normal tuple.
 
@@ -207,26 +207,26 @@ Create a LongTuple from a normal tuple.
 ```jldoctest
 julia> using UtilsKit
 
-julia> lt = makeLongTuple((1, 2, 3), 2);
+julia> lt = toLongTuple((1, 2, 3), 2);
 
 julia> lt[3]
 3
 ```
 """
-function makeLongTuple(tup::Tuple, longtuple_size=5)
+function toLongTuple(tup::Tuple, longtuple_size=5)
     longtuple_size = min(length(tup), longtuple_size)
     LongTuple{longtuple_size}(tup...)
 end
 
 
 """
-    makeLongTuple(normal_tuple; longtuple_size=5)
+    toLongTuple(normal_tuple; longtuple_size=5)
 
 # Arguments:
 - `normal_tuple`: a normal tuple
 - `longtuple_size`: size to break down the tuple into
 """
-function makeLongTuple(lt::LongTuple, longtuple_size=5)
+function toLongTuple(lt::LongTuple, longtuple_size=5)
     lt
 end
 
