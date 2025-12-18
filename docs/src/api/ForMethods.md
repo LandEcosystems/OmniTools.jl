@@ -1,13 +1,13 @@
 ```@meta
-CurrentModule = UtilsKit
+CurrentModule = OmniTools
 ```
 
-# UtilsKit.ForMethods
+# OmniTools.ForMethods
 
 ## Exported
 
 ```@autodocs
-Modules = [UtilsKit.ForMethods]
+Modules = [OmniTools.ForMethods]
 Public = true
 Private = false
 Order = [:module, :type, :function]
@@ -16,7 +16,7 @@ Order = [:module, :type, :function]
 ## Internal
 
 ```@autodocs
-Modules = [UtilsKit.ForMethods]
+Modules = [OmniTools.ForMethods]
 Public = false
 Private = true
 Order = [:module, :type, :function]

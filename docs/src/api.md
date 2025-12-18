@@ -1,5 +1,5 @@
 ```@meta
-CurrentModule = UtilsKit
+CurrentModule = OmniTools
 ```
 
 # API
@@ -8,14 +8,14 @@ This section is split into separate pages (one per module) for easier navigation
 
 ## Overview
 
-- **Flat API**: [UtilsKit (flat)](api/UtilsKit.md)
+- **Flat API**: [OmniTools (flat)](api/OmniTools.md)
 - **Submodules**:
-  - **Arrays**: [UtilsKit.ForArray](api/ForArray.md)
-  - **Collections**: [UtilsKit.ForCollections](api/ForCollections.md)
-  - **Display**: [UtilsKit.ForDisplay](api/ForDisplay.md)
-  - **DocStrings**: [UtilsKit.ForDocStrings](api/ForDocStrings.md)
-  - **LongTuples**: [UtilsKit.ForLongTuples](api/ForLongTuples.md)
-  - **Methods**: [UtilsKit.ForMethods](api/ForMethods.md)
-  - **Numbers**: [UtilsKit.ForNumber](api/ForNumber.md)
-  - **Pkg**: [UtilsKit.ForPkg](api/ForPkg.md)
-  - **Strings**: [UtilsKit.ForString](api/ForString.md)
+  - **Arrays**: [OmniTools.ForArray](api/ForArray.md)
+  - **Collections**: [OmniTools.ForCollections](api/ForCollections.md)
+  - **Display**: [OmniTools.ForDisplay](api/ForDisplay.md)
+  - **DocStrings**: [OmniTools.ForDocStrings](api/ForDocStrings.md)
+  - **LongTuples**: [OmniTools.ForLongTuples](api/ForLongTuples.md)
+  - **Methods**: [OmniTools.ForMethods](api/ForMethods.md)
+  - **Numbers**: [OmniTools.ForNumber](api/ForNumber.md)
+  - **Pkg**: [OmniTools.ForPkg](api/ForPkg.md)
+  - **Strings**: [OmniTools.ForString](api/ForString.md)

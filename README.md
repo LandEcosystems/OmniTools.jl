@@ -1,18 +1,18 @@
-# UtilsKit.jl
+# OmniTools.jl
 
 [![][docs-stable-img]][docs-stable-url] [![][docs-dev-img]][docs-dev-url] [![][ci-img]][ci-url] [![][codecov-img]][codecov-url] [![Julia][julia-img]][julia-url] [![License: EUPL-1.2](https://img.shields.io/badge/License-EUPL--1.2-blue)](https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12)
 
 [docs-dev-img]: https://img.shields.io/badge/docs-dev-blue.svg
-[docs-dev-url]: https://LandEcosystems.github.io/UtilsKit.jl/dev/
+[docs-dev-url]: https://LandEcosystems.github.io/OmniTools.jl/dev/
 
 [docs-stable-img]: https://img.shields.io/badge/docs-stable-blue.svg
-[docs-stable-url]: https://LandEcosystems.github.io/UtilsKit.jl/stable/
+[docs-stable-url]: https://LandEcosystems.github.io/OmniTools.jl/stable/
 
-[ci-img]: https://github.com/LandEcosystems/UtilsKit.jl/workflows/CI/badge.svg
-[ci-url]: https://github.com/LandEcosystems/UtilsKit.jl/actions?query=workflow%3ACI
+[ci-img]: https://github.com/LandEcosystems/OmniTools.jl/workflows/CI/badge.svg
+[ci-url]: https://github.com/LandEcosystems/OmniTools.jl/actions?query=workflow%3ACI
 
-[codecov-img]: https://codecov.io/gh/LandEcosystems/UtilsKit.jl/branch/main/graph/badge.svg
-[codecov-url]: https://codecov.io/gh/LandEcosystems/UtilsKit.jl
+[codecov-img]: https://codecov.io/gh/LandEcosystems/OmniTools.jl/branch/main/graph/badge.svg
+[codecov-url]: https://codecov.io/gh/LandEcosystems/OmniTools.jl
 
 [julia-img]: https://img.shields.io/badge/julia-v1.6+-blue.svg
 [julia-url]: https://julialang.org/
@@ -34,32 +34,32 @@ A comprehensive utility package providing foundational functions for data manipu
 The package keeps a flat API for convenience (e.g. `positive_mask(...)`), but also exposes submodules:
 
 ```julia
-using UtilsKit
+using OmniTools
 
-UtilsKit.ForArray.positive_mask([1, 0, -1])
-UtilsKit.ForNumber.replace_invalid_number(NaN, 0.0)
+OmniTools.ForArray.positive_mask([1, 0, -1])
+OmniTools.ForNumber.replace_invalid_number(NaN, 0.0)
 ```
 
-Note: long-tuple utilities live under `UtilsKit.ForLongTuples` to avoid naming conflicts with `Base` and with the exported `LongTuple` type.
+Note: long-tuple utilities live under `OmniTools.ForLongTuples` to avoid naming conflicts with `Base` and with the exported `LongTuple` type.
 
 ## Installation
 
 ```julia
 using Pkg
-Pkg.add("UtilsKit")
+Pkg.add("OmniTools")
 ```
 
 ## Quick Start
 
 ```julia
-using UtilsKit
+using OmniTools
 
 # Convert dictionary to NamedTuple
 dict = Dict(:a => 1, :b => 2, :c => Dict(:d => 3))
 nt = dict_to_namedtuple(dict)
 
 # Display a banner (FIGlet)
-print_figlet_banner("UtilsKit")
+print_figlet_banner("OmniTools")
 
 # Work with arrays
 arr = [1, 2, 3, 0, -1, 5]
@@ -69,7 +69,7 @@ bool_arr = positive_mask(arr)
 str = to_uppercase_first("hello_world", "Time")  # Returns :TimeHelloWorld
 
 # Generate type documentation
-using UtilsKit
+using OmniTools
 doc_str = get_type_docstring(SomeType)
 ```
 
@@ -134,7 +134,7 @@ doc_str = get_type_docstring(SomeType)
 
 ## Documentation
 
-For detailed documentation, see the [UtilsKit.jl documentation][docs-stable-url].
+For detailed documentation, see the [OmniTools.jl documentation][docs-stable-url].
 
 ## License
 
@@ -146,4 +146,4 @@ Contributions are welcome! Please open an issue or pull request in this reposito
 
 ## Authors
 
-UtilsKit.jl Contributors
+OmniTools.jl Contributors
