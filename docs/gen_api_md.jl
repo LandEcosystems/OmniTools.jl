@@ -82,14 +82,8 @@ function generate_module_api(module_name::Symbol, module_file::String, output_pa
         write(io, "```\n\n")
         write(io, "# OmniTools.$module_name\n\n")
         write(io, "## Exported\n\n")
-        write(io, "```@autodocs\n")
-        write(io, "Modules = [OmniTools.$module_name]\n")
-        write(io, "Public = true\n")
-        write(io, "Private = false\n")
-        write(io, "Order = [:module, :type, :function]\n")
-        write(io, "```\n\n")
         
-        # Add code sections for exported functions
+        # Get exported functions and generate @docs for each with code
         try
             mod = getfield(OmniTools, module_name)
             exported_names = names(mod, all=false)
@@ -107,22 +101,45 @@ function generate_module_api(module_name::Symbol, module_file::String, output_pa
                 end
             end
             
-            if !isempty(func_names)
-                write(io, "## Function Code\n\n")
-                for func_name in func_names
-                    func_code = extract_function_code(module_file, string(func_name))
-                    if func_code !== nothing && strip(func_code) != ""
-                        write(io, "### $func_name\n\n")
-                        write(io, "::: details Code\n\n")
-                        write(io, "```julia\n")
-                        write(io, func_code)
-                        write(io, "\n```\n\n")
-                        write(io, ":::\n\n")
-                    end
+            # Sort functions alphabetically
+            sort!(func_names, by=string)
+            
+            # Generate @docs for each function with code section right after
+            for func_name in func_names
+                # Write @docs block for the function
+                write(io, "```@docs\n")
+                write(io, "$(module_name).$func_name\n")
+                write(io, "```\n\n")
+                
+                # Add code section right after the docstring
+                func_code = extract_function_code(module_file, string(func_name))
+                if func_code !== nothing && strip(func_code) != ""
+                    write(io, "::: details Code\n\n")
+                    write(io, "```julia\n")
+                    write(io, func_code)
+                    write(io, "\n```\n\n")
+                    write(io, ":::\n\n")
                 end
+            end
+            
+            # If no functions found, fall back to @autodocs
+            if isempty(func_names)
+                write(io, "```@autodocs\n")
+                write(io, "Modules = [OmniTools.$module_name]\n")
+                write(io, "Public = true\n")
+                write(io, "Private = false\n")
+                write(io, "Order = [:module, :type, :function]\n")
+                write(io, "```\n\n")
             end
         catch e
             @warn "Could not extract functions for $module_name: $e"
+            # Fall back to @autodocs
+            write(io, "```@autodocs\n")
+            write(io, "Modules = [OmniTools.$module_name]\n")
+            write(io, "Public = true\n")
+            write(io, "Private = false\n")
+            write(io, "Order = [:module, :type, :function]\n")
+            write(io, "```\n\n")
         end
         
         write(io, "## Internal\n\n")
