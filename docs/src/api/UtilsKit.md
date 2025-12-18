@@ -1,13 +1,13 @@
 ```@meta
-CurrentModule = UtilsKit
+CurrentModule = OmniTools
 ```
 
-# UtilsKit (flat API)
+# OmniTools (flat API)
 
 ## Exported
 
 ```@autodocs
-Modules = [UtilsKit]
+Modules = [OmniTools]
 Public = true
 Private = false
 Order = [:module, :type, :function]
@@ -16,7 +16,7 @@ Order = [:module, :type, :function]
 ## Internal
 
 ```@autodocs
-Modules = [UtilsKit]
+Modules = [OmniTools]
 Public = false
 Private = true
 Order = [:module, :type, :function]

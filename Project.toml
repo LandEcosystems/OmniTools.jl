@@ -1,10 +1,10 @@
-name = "UtilsKit"
+name = "OmniTools"
 uuid = "202e6067-a2be-48c9-bc21-3d3d20912f89"
 license = "EUPL-1.2"
-authors = ["UtilsKit.jl Contributors"]
+authors = ["OmniTools.jl Contributors"]
 description = "A comprehensive utility package providing foundational functions for data manipulation, collections management, display formatting, and type introspection"
 readme = "README.md"
-repository = "https://github.com/LandEcosystems/UtilsKit.jl"
+repository = "https://github.com/LandEcosystems/OmniTools.jl"
 version = "0.1.0"
 
 [deps]
