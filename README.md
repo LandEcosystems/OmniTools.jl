@@ -134,7 +134,7 @@ doc_str = get_type_docstring(SomeType)
 
 ## Documentation
 
-For detailed documentation, see the [OmniTools.jl documentation][docs-stable-url].
+For detailed documentation, see the [OmniTools.jl documentation](https://landecosystems.github.io/OmniTools.jl).
 
 ## License
 
