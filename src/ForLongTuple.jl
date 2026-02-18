@@ -1,4 +1,15 @@
+"""
+    OmniTools.ForLongTuples
+
+Utilities for working with large tuples by chunking them into a `LongTuple` wrapper.
+Includes helpers for mapping/folding and converting between `LongTuple` and regular tuples.
+"""
+module ForLongTuples
+
 export LongTuple
+export foldl_longtuple
+export to_tuple
+export to_longtuple
 
 """
     LongTuple{NSPLIT,T}
@@ -12,6 +23,17 @@ A data structure that represents a tuple split into smaller chunks for better me
 # Type Parameters
 - `NSPLIT`: The number of elements in each split
 - `T`: The type of the underlying tuple
+
+# Examples
+
+```jldoctest
+julia> using OmniTools
+
+julia> lt = LongTuple{2}(1, 2, 3);
+
+julia> lastindex(lt)
+3
+```
 """
 struct LongTuple{NSPLIT,T <: Tuple}
     data::T
@@ -75,24 +97,24 @@ end
 
 Base.firstindex(arg::LongTuple{N}) where N = 1
 
-function Base.show(io::IO, arg::LongTuple{N}) where N
+function Base.show(io::IO, lt::LongTuple{N}) where N
     printstyled(io, "LongTuple"; color=:bold)
     printstyled(io, ":"; color=:yellow)
     println(io)
     k_tuple = 1
-    for (i, tup) in enumerate(arg.data)
+    for (i, tup) in enumerate(lt.data)
         for (j, elem) in enumerate(tup)
             if k_tuple<10
-                show_element(io, elem, "  $(k_tuple)  ↓ ")
+                _showLongTupleElement(io, elem, "  $(k_tuple)  ↓ ")
             else
-                show_element(io, elem, "  $(k_tuple) ↓ ")
+                _showLongTupleElement(io, elem, "  $(k_tuple) ↓ ")
             end
             k_tuple +=1
         end
     end
 end
 
-function show_element(io::IO, elem, indent)
+function _showLongTupleElement(io::IO, elem, indent)
     struct_name = nameof(typeof(elem))
     printstyled(io, indent; color=:light_black)
     printstyled(io, struct_name)
@@ -106,3 +128,106 @@ function show_element(io::IO, elem, indent)
         printstyled(io, " parameters\n"; color=:light_black)
     end
 end
+
+
+"""
+    foldl_longtuple(f, lt::LongTuple; init)
+
+Fold over the elements of a `LongTuple` in a compiler-friendly (unrolled) way.
+
+# Examples
+
+```jldoctest
+julia> using OmniTools
+
+julia> lt = to_longtuple((1, 2, 3), 2);
+
+julia> foldl_longtuple((x, acc) -> acc + x, lt; init=0)
+6
+```
+"""
+@generated function foldl_longtuple(f, lt::LongTuple{NSPL,T}; init) where {T,NSPL}
+    exes = []
+    N = length(T.parameters)
+    lastlength = length(last(T.parameters).parameters)
+    for i in 1:N
+        N2 = i==N ? lastlength : NSPL
+        for j in 1:N2
+            push!(exes, :(init = f(lt.data[$i][$j], init)))
+        end
+    end
+    return Expr(:block, exes...)
+end
+
+
+"""
+    to_tuple(long_tuple)
+
+Convert a LongTuple to a regular tuple.
+
+# Arguments
+- `long_tuple`: The input LongTuple
+
+# Returns
+- A regular tuple containing all elements from the LongTuple
+
+# Examples
+
+```jldoctest
+julia> using OmniTools
+
+julia> lt = to_longtuple((1, 2, 3), 2);
+
+julia> to_tuple(lt)
+(1, 2, 3)
+```
+"""
+function to_tuple(lt::LongTuple)
+    emp_vec = []
+    foreach(lt) do x
+        push!(emp_vec, x)
+    end
+    return Tuple(emp_vec)
+end
+
+"""
+    to_longtuple(normal_tuple; longtuple_size=5)
+
+Create a LongTuple from a normal tuple.
+
+# Arguments
+- `normal_tuple`: The input tuple to convert
+- `longtuple_size`: Size to break down the tuple into (default: 5)
+
+# Returns
+- A LongTuple containing the elements of the input tuple
+
+# Examples
+
+```jldoctest
+julia> using OmniTools
+
+julia> lt = to_longtuple((1, 2, 3), 2);
+
+julia> lt[3]
+3
+```
+"""
+function to_longtuple(tup::Tuple, longtuple_size=5)
+    longtuple_size = min(length(tup), longtuple_size)
+    LongTuple{longtuple_size}(tup...)
+end
+
+
+"""
+    to_longtuple(normal_tuple; longtuple_size=5)
+
+# Arguments:
+- `normal_tuple`: a normal tuple
+- `longtuple_size`: size to break down the tuple into
+"""
+function to_longtuple(lt::LongTuple, longtuple_size=5)
+    lt
+end
+
+end # module ForLongTuples
