@@ -100,8 +100,8 @@ module OmniTools
    include("ForString.jl")       # OmniTools.ForString
    include("ForMethods.jl")      # OmniTools.ForMethods
    include("ForDocStrings.jl")   # OmniTools.ForDocStrings
-   include("ForCollections.jl")  # OmniTools.ForCollections
-   include("ForLongTuples.jl")   # OmniTools.ForLongTuples
+   include("ForTuples.jl")       # OmniTools.ForTuples
+   include("ForLongTuple.jl")    # OmniTools.ForLongTuple
    include("ForArray.jl")        # OmniTools.ForArray
    include("ForDisplay.jl")      # OmniTools.ForDisplay
    include("ForPkg.jl")          # OmniTools.ForPkg
