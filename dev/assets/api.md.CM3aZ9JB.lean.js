@@ -1,1 +1,0 @@
-import{_ as r,c as a,o as i,aA as t}from"./chunks/framework.Ir-vIDqp.js";const c=JSON.parse('{"title":"API","description":"","frontmatter":{},"headers":[],"relativePath":"api.md","filePath":"api.md","lastUpdated":null}'),l={name:"api.md"};function e(s,o,n,p,g,m){return i(),a("div",null,[...o[0]||(o[0]=[t("",4)])])}const d=r(l,[["render",e]]);export{c as __pageData,d as default};
