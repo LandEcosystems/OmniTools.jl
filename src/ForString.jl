@@ -6,8 +6,8 @@ Currently includes helpers for converting snake_case strings to `Symbol`s.
 """
 module ForString
 
+export normalize_path_separator
 export to_uppercase_first
-
 
 """
     to_uppercase_first(s::AbstractString, prefix="")
@@ -36,4 +36,27 @@ function to_uppercase_first(str::AbstractString, prefix::AbstractString="")
     return Symbol(prefix_s * join(uppercasefirst.(split(str_s, "_"))))
 end
 
+"""
+    normalize_path_separator(path::AbstractString)
+Normalizes a file path by replacing backslashes with forward slashes and collapsing multiple slashes.
+# Arguments:
+- `path`: The input file path as a string.
+# Returns:
+A normalized file path string.
+# Examples
+```jldoctest
+julia> using OmniTools
+julia> normalize_path_separator("C:\\Users\\Example\\Documents\\\\file.txt")
+"C:/Users/Example/Documents/file.txt"
+```
+"""
+function normalize_path_separator(path::AbstractString)
+    # Replace backslashes with forward slashes
+    p = replace(path, '\\' => '/')
+
+    # Collapse accidental double slashes (except protocol prefixes like http://)
+    p = replace(p, r"(?<!:)/{2,}" => "/")
+
+    return p
+end
 end # module ForString
