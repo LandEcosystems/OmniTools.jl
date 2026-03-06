@@ -5,7 +5,7 @@ authors = ["OmniTools.jl Contributors"]
 description = "A comprehensive utility package providing foundational functions for data manipulation, collections management, display formatting, and type introspection"
 readme = "README.md"
 repository = "https://github.com/LandEcosystems/OmniTools.jl"
-version = "0.1.0"
+version = "0.1.1"
 
 [deps]
 Accessors = "7d9f7c33-5ae7-4f3b-8dc6-eff91059b697"
