@@ -41,6 +41,19 @@ using Test
         @test nt.b == 2
     end
 
+    @testset "ForLongTuples iteration" begin
+        tup = (1, 2.0, :a, "b", 5)
+        lt = to_longtuple(tup, 2)
+        @test length(lt) == 5
+        @test keys(lt) == Base.OneTo(5)
+        @test collect(lt) == collect(tup)
+        @test [x for x in lt] == collect(tup)
+        @test findfirst(x -> x === :a, lt) == 3
+        @test isnothing(findfirst(x -> x === :c, lt))
+        @test all(lt[i] === tup[i] for i in keys(lt))
+        @test collect(enumerate(lt)) == collect(enumerate(tup))
+    end
+
     @testset "ForArray basics" begin
         @test positive_mask([1.0, 0.0, -1.0]) == BitVector([1, 0, 0])
         @test positive_mask([1.0, NaN, -1.0]) == BitVector([1, 0, 0])

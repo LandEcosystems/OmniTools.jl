@@ -97,6 +97,20 @@ end
 
 Base.firstindex(arg::LongTuple{N}) where N = 1
 
+Base.length(arg::LongTuple) = sum(length, arg.data)
+
+Base.keys(arg::LongTuple) = Base.OneTo(length(arg))
+
+# The state is the index of the inner tuple and the index within it, so each step is a
+# direct lookup rather than a search through the inner tuples as in `getindex`.
+function Base.iterate(arg::LongTuple, state=(1, 1))
+    i_tup, i_elem = state
+    i_tup > length(arg.data) && return nothing
+    tup = arg.data[i_tup]
+    next_state = i_elem < length(tup) ? (i_tup, i_elem + 1) : (i_tup + 1, 1)
+    return tup[i_elem], next_state
+end
+
 function Base.show(io::IO, lt::LongTuple{N}) where N
     printstyled(io, "LongTuple"; color=:bold)
     printstyled(io, ":"; color=:yellow)
