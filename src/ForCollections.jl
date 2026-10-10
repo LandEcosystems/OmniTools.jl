@@ -43,11 +43,12 @@ function _collectTypeColors(data; _color=true)
     all_types = []
     all_types = _collectTypes!(data, all_types)
     c_types = Dict{DataType,Int}()
-    # Julia 1.10/1.11 compatible: use simple 4-bit ANSI color codes 0–15 as defaults.
-    _default_colors = collect(0:15)
+    # Julia 1.10/1.11 compatible: use 4-bit ANSI color codes as defaults. Black, white
+    # and the greys are skipped so that text stays readable on light and dark terminals.
+    _default_colors = [1, 2, 3, 4, 5, 6, 9, 10, 11, 12, 13, 14]
     for (i,t) ∈ enumerate(all_types)
         if _color == true
-            c = i<17 ? _default_colors[i] : rand(16:255)
+            c = i <= length(_default_colors) ? _default_colors[i] : rand(17:231)
         else
             c = 0
         end
@@ -520,7 +521,7 @@ function list_to_table(list)
 end
 
 """
-    tc_print(d; _color=true, _type=true, _value=true, t_op=true)
+    tc_print(d; _color=true, _type=false, _value=true, _tspace="", space_pad="")
 
 Print a formatted representation of a data structure with type annotations and colors.
 
@@ -548,74 +549,67 @@ true
 """
 function tc_print(data; _color=true, _type=false, _value=true, _tspace="", space_pad="")
     colors_types = _collectTypeColors(data; _color=_color)
-    # aio = AnnotatedIOBuffer()
-    lc = nothing
-    ttf = _tspace * space_pad
+    _tcPrint(data, colors_types, _tspace * space_pad; _color=_color, _type=_type, _value=_value)
+    return nothing
+end
+
+"""
+    _tcPrint(data, colors_types, indent; _color=true, _type=false, _value=true)
+
+Print the fields of `data` at the given `indent`, recursing into nested NamedTuples
+with two more spaces of indent. The opening and closing parentheses of a nested
+NamedTuple share the color of that NamedTuple type.
+"""
+function _tcPrint(data, colors_types, indent; _color=true, _type=false, _value=true)
     for k ∈ sort(collect(keys(data)))
-        if data[k] isa NamedTuple
-            tp = " = (;"
-            if length(data[k]) > 0
-                printstyled(Crayon(; foreground=colors_types[typeof(data[k])]), "$(k)$(tp)\n")
+        v = data[k]
+        c = _color ? colors_types[typeof(v)] : nothing
+        if v isa NamedTuple
+            tp = _type ? "::NamedTuple" : ""
+            if isempty(v)
+                _tcPrintln(c, "$(indent)$(k) = (;)$(tp),")
             else
-                printstyled(Crayon(; foreground=colors_types[typeof(data[k])]), "$(k)$(tp)")
+                _tcPrintln(c, "$(indent)$(k) = (;")
+                _tcPrint(v, colors_types, indent * "  "; _color=_color, _type=_type, _value=_value)
+                _tcPrintln(c, "$(indent))$(tp),")
             end
-            tc_print(data[k]; _color=_color, _type=_type, _value=_value, _tspace=ttf, space_pad="  ")
-        else
-            if _type == true
-                tp = "::$(typeof(data[k]))"
-                if tp == "::NT"
-                    tp = "::Tuple"
-                end
-            else
-                tp = ""
-            end
-            if typeof(data[k]) <: Float32
-                to_print = "$(ttf) $(k) = $(data[k])f0$(tp),\n"
-                if !_value
-                    to_print = "$(ttf) $(k)$(tp),\n"
-                end
-                print(Crayon(; foreground=colors_types[typeof(data[k])]),
-                    to_print)
-            elseif typeof(data[k]) <: AbstractVector
-                to_print = "$(ttf) $(k) = $(data[k])$(tp),\n"
-                if !_value
-                    to_print = "$(ttf) $(k)$(tp),\n"
-                end
-                print(Crayon(; foreground=colors_types[typeof(data[k])]), to_print)
-            elseif typeof(data[k]) <: Matrix
-                print(Crayon(; foreground=colors_types[typeof(data[k])]), "$(ttf) $(k) = [\n")
-                tt_row = repeat(ttf[1], length(ttf) + 1)
-                for row ∈ eachrow(data[k])
-                    row_str = nothing
-                    if eltype(row) == Float32
-                        row_str = join(row, "f0 ") * "f0"
-                    else
-                        row_str = join(row, " ")
-                    end
-                    print(Crayon(; foreground=colors_types[typeof(data[k])]),
-                        "$(tt_row) $(row_str);\n")
-                end
-                print(Crayon(; foreground=colors_types[typeof(data[k])]), "$(tt_row) ]$(tp),\n")
-            else
-                to_print = "$(ttf) $(k) = $(data[k])$(tp),"
-                if !_value
-                    to_print = "$(ttf) $(k)$(tp),"
-                end
-                print(Crayon(; foreground=colors_types[typeof(data[k])]),
-                    to_print)
-            end
-            lc = colors_types[typeof(data[k])]
+            continue
         end
-        # end
-        if _type == true
-            _tspace = _tspace * " "
-            print(Crayon(; foreground=lc), " $(ttf))::NamedTuple,\n")
-        else
-            if data[k] isa NamedTuple
-                print(Crayon(; foreground=lc), "$(ttf)),\n")
+        tp = ""
+        if _type
+            tp = "::$(typeof(v))"
+            if tp == "::NT"
+                tp = "::Tuple"
             end
+        end
+        if !_value
+            _tcPrintln(c, "$(indent)$(k)$(tp),")
+        elseif v isa AbstractMatrix
+            _tcPrintln(c, "$(indent)$(k) = [")
+            for row ∈ eachrow(v)
+                _tcPrintln(c, "$(indent)  $(join(repr.(row), " "));")
+            end
+            _tcPrintln(c, "$(indent)]$(tp),")
+        else
+            _tcPrintln(c, "$(indent)$(k) = $(repr(v))$(tp),")
         end
     end
+    return nothing
+end
+
+"""
+    _tcPrintln(color, text)
+
+Print `text` and a newline in the given ANSI `color`, or uncolored when `color` is
+`nothing`. The color is reset after the text so it does not leak into later output.
+"""
+function _tcPrintln(color, text)
+    if isnothing(color)
+        println(text)
+    else
+        println(Crayon(; foreground=color), text, Crayon(; reset=true))
+    end
+    return nothing
 end
 
 end # module ForCollections
