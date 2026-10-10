@@ -16,17 +16,41 @@ export print_figlet_banner
 export print_info
 export print_info_separator
 export toggle_type_abbrev_in_stacktrace
+export toggle_display_verbosity
 export set_verbosity
 
 figlet_fonts = ("3D Diagonal", "3D-ASCII", "3d", "4max", "5 Line Oblique", "5x7", "6x9", "AMC AAA01", "AMC Razor", "AMC Razor2", "AMC Slash", "AMC Slider", "AMC Thin", "AMC Tubes", "AMC Untitled", "ANSI Regular", "ANSI Shadow", "Big Money-ne", "Big Money-nw", "Big Money-se", "Big Money-sw", "Bloody", "Caligraphy2", "DOS Rebel", "Dancing Font", "Def Leppard", "Delta Corps Priest 1", "Electronic", "Elite", "Fire Font-k", "Fun Face", "Georgia11", "Larry 3D", "Lil Devil", "Line Blocks", "NT Greek", "NV Script", "Red Phoenix", "Rowan Cap", "S Blood", "THIS", "Two Point", "USA Flag", "Wet Letter", "acrobatic", "alligator", "alligator2", "alligator3", "alphabet", "arrows", "asc_____", "avatar", "banner", "banner3", "banner3-D", "banner4", "barbwire", "bell", "big", "bolger", "braced", "bright", "bulbhead", "caligraphy", "charact2", "charset_", "clb6x10", "colossal", "computer", "cosmic", "crawford", "crazy", "diamond", "doom", "fender", "fraktur", "georgi16", "ghoulish", "graffiti", "hollywood", "jacky", "jazmine", "maxiwi", "merlin1", "nancyj", "nancyj-improved", "nscript", "o8", "ogre", "pebbles", "reverse", "roman", "rounded", "rozzo", "script", "slant", "small", "soft", "speed", "standard", "stop", "tanja", "thick", "train", "univers", "whimsy");
-VERBOSE = Ref(true)
+const VERBOSE = Ref(true)
 
 """
-    set_verbosity(verbose=true)
-Sets the verbosity level for Sindbad experimental setup and simulation.
-Setting it to false hides the informational messages.
+    toggle_display_verbosity(verbose::Bool=true)
+
+Turns the display helpers on or off. When `verbose` is `false`, `print_info`,
+`print_info_separator` and `print_figlet_banner` print nothing.
+
+# Arguments:
+- `verbose`: Whether to show the display output (default: `true`).
+
+# Examples
+
+```jldoctest
+julia> using OmniTools
+
+julia> toggle_display_verbosity(false)
+false
+
+julia> toggle_display_verbosity(true)
+true
+```
 """
-set_verbosity(verbose=true) = (VERBOSE[] = verbose)
+toggle_display_verbosity(verbose::Bool=true) = (VERBOSE[] = verbose)
+
+"""
+    set_verbosity(verbose::Bool=true)
+
+Alias for [`toggle_display_verbosity`](@ref), kept for backward compatibility.
+"""
+set_verbosity(verbose::Bool=true) = toggle_display_verbosity(verbose)
 
 """
     set_log_level()
@@ -99,7 +123,7 @@ true
 ```
 """
 function print_figlet_banner(disp_text="OmniTools"; color::Bool=true, n::Integer=1, pause::Real=0.1)
-    n < 1 && return nothing
+    (VERBOSE[] && n >= 1) || return nothing
     for i in 1:n
         if color
             print(Crayon(; foreground=rand(0:255)), "\n")

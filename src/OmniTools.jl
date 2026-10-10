@@ -153,8 +153,8 @@ module OmniTools
           stack_as_columns
 
    # Display helpers
-   using .ForDisplay: set_log_level, print_figlet_banner, print_info, print_info_separator, toggle_type_abbrev_in_stacktrace, VERBOSE
-   export set_log_level, print_figlet_banner, print_info, print_info_separator, toggle_type_abbrev_in_stacktrace, VERBOSE
+   using .ForDisplay: set_log_level, print_figlet_banner, print_info, print_info_separator, toggle_type_abbrev_in_stacktrace, toggle_display_verbosity, set_verbosity, VERBOSE
+   export set_log_level, print_figlet_banner, print_info, print_info_separator, toggle_type_abbrev_in_stacktrace, toggle_display_verbosity, set_verbosity, VERBOSE
 
    # Pkg / extensions helpers
    using .ForPkg: add_extension_to_function, add_extension_to_package, add_package, remove_extension_from_package
