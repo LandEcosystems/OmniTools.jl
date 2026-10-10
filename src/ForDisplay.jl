@@ -23,13 +23,18 @@ figlet_fonts = ("3D Diagonal", "3D-ASCII", "3d", "4max", "5 Line Oblique", "5x7"
 const VERBOSE = Ref(true)
 
 """
-    toggle_display_verbosity(verbose::Bool=true)
+    toggle_display_verbosity()
+    toggle_display_verbosity(verbose::Bool)
 
-Turns the display helpers on or off. When `verbose` is `false`, `print_info`,
+Turns the display helpers on or off. When they are off, `print_info`,
 `print_info_separator` and `print_figlet_banner` print nothing.
 
 # Arguments:
-- `verbose`: Whether to show the display output (default: `true`).
+- `verbose`: Whether to show the display output. Without it, the current setting is
+  switched to its opposite.
+
+# Returns:
+- `nothing`.
 
 # Examples
 
@@ -37,18 +42,31 @@ Turns the display helpers on or off. When `verbose` is `false`, `print_info`,
 julia> using OmniTools
 
 julia> toggle_display_verbosity(false)
-false
 
-julia> toggle_display_verbosity(true)
+julia> toggle_display_verbosity()
+
+julia> OmniTools.VERBOSE[]
 true
 ```
 """
-toggle_display_verbosity(verbose::Bool=true) = (VERBOSE[] = verbose)
+function toggle_display_verbosity end
+
+function toggle_display_verbosity()
+    VERBOSE[] = !VERBOSE[]
+    return nothing
+end
+
+function toggle_display_verbosity(verbose::Bool)
+    VERBOSE[] = verbose
+    return nothing
+end
 
 """
     set_verbosity(verbose::Bool=true)
 
-Alias for [`toggle_display_verbosity`](@ref), kept for backward compatibility.
+Sets the display verbosity with [`toggle_display_verbosity`](@ref), kept for backward
+compatibility. Unlike `toggle_display_verbosity()`, calling it without an argument
+turns the display on rather than switching it.
 """
 set_verbosity(verbose::Bool=true) = toggle_display_verbosity(verbose)
 
