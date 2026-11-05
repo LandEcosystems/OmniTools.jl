@@ -23,11 +23,20 @@ figlet_fonts = ("3D Diagonal", "3D-ASCII", "3d", "4max", "5 Line Oblique", "5x7"
 const VERBOSE = Ref(true)
 
 """
+    _isDisplayed(level::LogLevel)
+
+Returns whether the display helpers show a message of `level`, i.e., the display is
+on and the current logger, set by [`set_log_level`](@ref), lets `level` through.
+"""
+_isDisplayed(level::LogLevel) = VERBOSE[] && Logging.min_enabled_level(Logging.current_logger()) <= level
+
+"""
     toggle_display_verbosity()
     toggle_display_verbosity(verbose::Bool)
 
 Turns the display helpers on or off. When they are off, `print_info`,
-`print_info_separator` and `print_figlet_banner` print nothing.
+`print_info_separator` and `print_figlet_banner` print nothing. When they are on, they
+still follow the log level of [`set_log_level`](@ref).
 
 # Arguments:
 - `verbose`: Whether to show the display output. Without it, the current setting is
@@ -92,10 +101,14 @@ end
 """
     set_log_level(log_level::Symbol)
 
-Sets the logging level to the specified level.
+Sets the logging level to the specified level. The level also sets what the display
+helpers show: `print_info` shows its messages at `:info` and its nested messages with
+`n_m >= 4` and `print_figlet_banner` only at `:debug`, and both are silent at `:warn`
+and `:error`.
 
 # Arguments:
-- `log_level`: The desired logging level (`:debug`, `:warn`, `:error`).
+- `log_level`: The desired logging level (`:debug`, `:info`, `:warn`, `:error`). Any
+  other value sets `:info`.
 
 # Examples
 
@@ -109,6 +122,8 @@ function set_log_level(log_level::Symbol)
     logger = ConsoleLogger(stderr, Logging.Info)
     if log_level == :debug
         logger = ConsoleLogger(stderr, Logging.Debug)
+    elseif log_level == :info
+        logger = ConsoleLogger(stderr, Logging.Info)
     elseif log_level == :warn
         logger = ConsoleLogger(stderr, Logging.Warn)
     elseif log_level == :error
@@ -121,7 +136,8 @@ end
 """
     print_figlet_banner(disp_text="OmniTools"; color=true, n=1, pause=0.1)
 
-Displays the given text as a banner using `FIGlet`.
+Displays the given text as a banner using `FIGlet`. The banner is shown only when the
+log level of [`set_log_level`](@ref) is `:debug`.
 
 # Arguments:
 - `disp_text`: The text to display (default: "OmniTools").
@@ -141,7 +157,7 @@ true
 ```
 """
 function print_figlet_banner(disp_text="OmniTools"; color::Bool=true, n::Integer=1, pause::Real=0.1)
-    (VERBOSE[] && n >= 1) || return nothing
+    (_isDisplayed(Logging.Debug) && n >= 1) || return nothing
     for i in 1:n
         if color
             print(Crayon(; foreground=rand(0:255)), "\n")
@@ -165,6 +181,8 @@ print_figlet_banner(disp_text, color::Bool; n::Integer=1, pause::Real=0.1) = pri
     print_info(func, file_name, line_number, info_message; spacer=" ", n_f=1, n_m=1)
 
 Logs an informational message with optional function, file, and line number context.
+The message is shown when the log level of [`set_log_level`](@ref) is `:info` or
+`:debug`, and a nested message with `n_m >= 4` only at `:debug`.
 
 # Arguments
 - `func`: The function object or `nothing` if not applicable.
@@ -174,6 +192,7 @@ Logs an informational message with optional function, file, and line number cont
 - `spacer`: (Optional) String used for spacing in the log output (default: `" "`).
 - `n_f`: (Optional) Number of times to repeat `spacer` before the function/file info (default: `1`).
 - `n_m`: (Optional) Number of times to repeat `spacer` before the message (default: `1`).
+  It also sets the level of the message, `Debug` from 4 on and `Info` below.
 
 # Example
 ```julia
@@ -192,7 +211,7 @@ true
 ```
 """
 function print_info(func, file_name, line_number, info_message; spacer=" ", n_f=1, n_m=1, display_color=(0, 152, 221))
-    VERBOSE[] || return nothing
+    _isDisplayed(n_m >= 4 ? Logging.Debug : Logging.Info) || return nothing
     func_space = spacer ^ n_f
     info_space = spacer ^ n_m
     file_link = ""
