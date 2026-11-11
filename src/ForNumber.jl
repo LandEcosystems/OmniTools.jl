@@ -14,6 +14,7 @@ export safe_divide
 export is_invalid_number
 export replace_invalid_number
 export at_least_zero, at_least_one, at_most_zero, at_most_one
+export safe_gt_zero
 
 """
     clamp_zero_one(num)
@@ -136,6 +137,34 @@ julia> at_least_zero(-1.0)
 """
 function at_least_zero(num)
     return max(num, zero(num))
+end
+
+
+"""
+    safe_gt_zero(num)
+
+returns whether `num` is greater than zero by its value, also for a dual number of
+ForwardDiff. Use it to guard a division or a power that is not defined at zero.
+
+# Notes:
+- A ForwardDiff dual of value 0 with a positive derivative compares greater than 0, so
+  `num > 0` would take the guarded branch and give NaN derivatives. The comparison is
+  with a tiny positive threshold, which is decided by the value alone.
+
+# Examples
+
+```jldoctest
+julia> using OmniTools
+
+julia> safe_gt_zero(0.5)
+true
+
+julia> safe_gt_zero(0.0)
+false
+```
+"""
+function safe_gt_zero(num)
+    return num > oftype(num, 1e-30)
 end
 
 

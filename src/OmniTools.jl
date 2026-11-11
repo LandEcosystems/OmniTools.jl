@@ -112,9 +112,9 @@ module OmniTools
 
    # Number
    using .ForNumber: clamp_zero_one, cumulative_sum!, safe_divide, is_invalid_number, replace_invalid_number,
-                     at_least_zero, at_least_one, at_most_zero, at_most_one
+                     at_least_zero, at_least_one, at_most_zero, at_most_one, safe_gt_zero
    export clamp_zero_one, cumulative_sum!, safe_divide, is_invalid_number, replace_invalid_number,
-          at_least_zero, at_least_one, at_most_zero, at_most_one
+          at_least_zero, at_least_one, at_most_zero, at_most_one, safe_gt_zero
 
    # String
    using .ForString: to_uppercase_first
