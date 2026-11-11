@@ -161,11 +161,17 @@ true
 
 julia> safe_gt_zero(0.0)
 false
+
+julia> safe_gt_zero(0)
+false
 ```
 """
 function safe_gt_zero(num)
     return num > oftype(num, 1e-30)
 end
+
+# an integer cannot hold the threshold, and is never between 0 and it
+safe_gt_zero(num::Integer) = num > 0
 
 
 """
